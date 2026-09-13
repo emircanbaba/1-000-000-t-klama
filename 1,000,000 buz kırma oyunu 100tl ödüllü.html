@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BUZ TIKLAYICISI - KUTSAL MERMER</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #020617;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: #f8fafc;
+        }
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 24px;
+            background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+            z-index: 10;
+        }
+        .header {
+            text-align: center;
+            margin-top: 10px;
+        }
+        .title {
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: #94a3b8;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .target-info {
+            font-size: 12px;
+            color: #38bdf8;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        .score-display {
+            font-size: clamp(2.2rem, 7vw, 4rem);
+            font-weight: 900;
+            color: #f8fafc;
+            font-variant-numeric: tabular-nums;
+            text-shadow: 0 0 30px rgba(56, 189, 248, 0.4);
+        }
+        .cps-display {
+            font-size: 13px;
+            color: #38bdf8;
+            font-weight: 600;
+            letter-spacing: 1px;
+            margin-top: 4px;
+        }
+        .warning-text {
+            font-size: 12px;
+            color: #ef4444;
+            font-weight: 700;
+            height: 16px;
+            margin-top: 4px;
+            transition: opacity 0.3s;
+        }
+        /* Clickable Ice Core */
+        .click-area {
+            position: relative;
+            width: 220px;
+            height: 220px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            margin: auto 0;
+        }
+        .ice-orb {
+            width: 180px;
+            height: 180px;
+            background: linear-gradient(135deg, #38bdf8 0%, #1e40af 100%);
+            border-radius: 50%;
+            box-shadow: 0 0 50px rgba(56, 189, 248, 0.3), inset 0 0 30px rgba(255, 255, 255, 0.4);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.08s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .ice-orb:active, .ice-orb.clicked {
+            transform: scale(0.92);
+        }
+        .ice-core-inner {
+            width: 120px;
+            height: 120px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(8px);
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        /* Upgrades Panel Wrapper & Author Credit */
+        .panel-wrapper {
+            width: 100%;
+            max-width: 440px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .author-credit {
+            text-align: center;
+            font-size: 12px;
+            color: #94a3b8;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        .author-credit span {
+            color: #38bdf8;
+            font-weight: 700;
+        }
+        .upgrades-panel {
+            width: 100%;
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+        }
+        .upgrade-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 12px 16px;
+            border-radius: 12px;
+            transition: background 0.2s;
+        }
+        .upgrade-card:hover {
+            background: rgba(255, 255, 255, 0.06);
+        }
+        .upgrade-info h4 {
+            font-size: 14px;
+            font-weight: 700;
+            color: #f8fafc;
+            margin-bottom: 2px;
+        }
+        .upgrade-info p {
+            font-size: 11px;
+            color: #94a3b8;
+        }
+        .upgrade-btn {
+            background: linear-gradient(135deg, #38bdf8 0%, #2563eb 100%);
+            color: #f8fafc;
+            border: none;
+            padding: 8px 16px;
+            font-size: 12px;
+            font-weight: 700;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+            transition: all 0.2s;
+        }
+        .upgrade-btn:disabled {
+            background: rgba(255, 255, 255, 0.08);
+            color: #64748b;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        .upgrade-btn:not(:disabled):hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(37, 99, 235, 0.5);
+        }
+        /* Floating click numbers animation */
+        .float-text {
+            position: absolute;
+            font-weight: 900;
+            font-size: 18px;
+            color: #38bdf8;
+            pointer-events: none;
+            animation: floatUp 0.6s ease-out forwards;
+        }
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-50px) scale(1.2); }
+        }
+        /* Victory Screen Overlay */
+        #victoryModal {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(2, 6, 23, 0.9);
+            backdrop-filter: blur(12px);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 30;
+            text-align: center;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <div class="header">
+            <div class="title">Buz Parçacıkları</div>
+            <div class="target-info">Hedef: 1,000,000 Buz</div>
+            <div class="score-display" id="scoreEl">0</div>
+            <div class="cps-display" id="cpsEl">Saniyede 0 Buz</div>
+            <div class="warning-text" id="warningEl"></div>
+        </div>
+
+        <div class="click-area" id="clickArea">
+            <div class="ice-orb" id="iceOrb">
+                <div class="ice-core-inner"></div>
+            </div>
+        </div>
+
+        <div class="panel-wrapper">
+            <div class="author-credit"><span>CyberPenguin</span> Tarafından yapılmıştır</div>
+            <div class="upgrades-panel">
+                <div class="upgrade-card">
+                    <div class="upgrade-info">
+                        <h4>Küçük Buz Torbası</h4>
+                        <p>+1 Tıklama Gücü (Maliyet: <span id="c1Cost">15</span>)</p>
+                    </div>
+                    <button class="upgrade-btn" id="buyClicker" disabled>Satın Al</button>
+                </div>
+                <div class="upgrade-card">
+                    <div class="upgrade-info">
+                        <h4>Otomatik Rüzgar Pompası</h4>
+                        <p>+1 Buz / Saniye (Maliyet: <span id="c2Cost">50</span>)</p>
+                    </div>
+                    <button class="upgrade-btn" id="buyAuto" disabled>Satın Al</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="victoryModal">
+        <h1 style="font-size: 2.5rem; color: #38bdf8; margin-bottom: 10px;">TEBRİKLER!</h1>
+        <p style="color: #94a3b8; max-width: 400px; line-height: 1.5; margin-bottom: 20px;">
+            1,000,000 buz hedefine başarıyla ulaştın ve kutsal mermeri fethettin!
+        </p>
+        <button class="upgrade-btn" style="padding: 14px 32px; font-size: 16px;" onclick="location.reload()">Yeniden Başla</button>
+    </div>
+
+<script>
+    let score = 0;
+    let clickPower = 1;
+    let autoPower = 0;
+    
+    let costClicker = 15;
+    let costAuto = 50;
+    const TARGET_SCORE = 1000000;
+    let gameWon = false;
+
+    let clickTimestamps = [];
+    const MAX_CPS = 15;
+
+    const scoreEl = document.getElementById('scoreEl');
+    const cpsEl = document.getElementById('cpsEl');
+    const warningEl = document.getElementById('warningEl');
+    const clickArea = document.getElementById('clickArea');
+    const iceOrb = document.getElementById('iceOrb');
+    const victoryModal = document.getElementById('victoryModal');
+    
+    const buyClickerBtn = document.getElementById('buyClicker');
+    const buyAutoBtn = document.getElementById('buyAuto');
+    const c1CostEl = document.getElementById('c1Cost');
+    const c2CostEl = document.getElementById('c2Cost');
+
+    let audioCtx = null;
+    function playClickSound() {
+        try {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            
+            let osc = audioCtx.createOscillator();
+            let gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.05);
+            
+            gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.05);
+        } catch(e) {}
+    }
+
+    clickArea.addEventListener('pointerdown', (e) => {
+        if (gameWon) return;
+
+        let now = performance.now();
+        clickTimestamps.push(now);
+        
+        clickTimestamps = clickTimestamps.filter(t => now - t < 1000);
+
+        if (clickTimestamps.length > MAX_CPS) {
+            score = 0;
+            clickTimestamps = [];
+            warningEl.innerText = "Otomatik tıklayıcı tespit edildi! Skor sıfırlandı.";
+            setTimeout(() => {
+                if (warningEl.innerText.includes("tık")) warningEl.innerText = "";
+            }, 3000);
+            updateDisplay();
+            return;
+        }
+
+        score += clickPower;
+        playClickSound();
+        checkVictory();
+        updateDisplay();
+        
+        iceOrb.classList.add('clicked');
+        setTimeout(() => iceOrb.classList.remove('clicked'), 80);
+
+        createFloatingText(e.clientX, e.clientY, `+${clickPower}`);
+    });
+
+    function createFloatingText(x, y, text) {
+        let el = document.createElement('div');
+        el.className = 'float-text';
+        el.innerText = text;
+        el.style.left = (x - 15) + 'px';
+        el.style.top = (y - 25) + 'px';
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 600);
+    }
+
+    buyClickerBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (score >= costClicker && !gameWon) {
+            score -= costClicker;
+            clickPower += 1;
+            costClicker = Math.floor(costClicker * 1.5);
+            updateDisplay();
+        }
+    });
+
+    buyAutoBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (score >= costAuto && !gameWon) {
+            score -= costAuto;
+            autoPower += 1;
+            costAuto = Math.floor(costAuto * 1.6);
+            updateDisplay();
+        }
+    });
+
+    setInterval(() => {
+        if (autoPower > 0 && !gameWon) {
+            score += autoPower;
+            checkVictory();
+            updateDisplay();
+        }
+    }, 1000);
+
+    function checkVictory() {
+        if (score >= TARGET_SCORE && !gameWon) {
+            gameWon = true;
+            score = TARGET_SCORE;
+            victoryModal.style.display = 'flex';
+        }
+    }
+
+    function updateDisplay() {
+        scoreEl.innerText = Math.floor(score).toLocaleString();
+        cpsEl.innerText = `Saniyede ${autoPower} Buz`;
+        
+        c1CostEl.innerText = costClicker.toLocaleString();
+        c2CostEl.innerText = costAuto.toLocaleString();
+
+        buyClickerBtn.disabled = score < costClicker;
+        buyAutoBtn.disabled = score < costAuto;
+    }
+
+    updateDisplay();
+</script>
+
+</body>
+</html>
